@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPACE TRANSFORMER | GTA EDITION</title>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@900&family=Space+Grotesk:wght@300;700&display=swap');
+
+        :root {
+            --gta-yellow: #fde02a;
+            --gta-blue: #00aaff;
+            --neon-pink: #ff00ff;
+            --bg-overlay: rgba(0, 0, 0, 0.7);
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: 'Outfit', sans-serif;
+            background: #050505;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        /* SPACE ANIME BACKGROUND */
+        .bg-video-wrap {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: url('https://wallpaperaccess.com/full/419642.jpg') no-repeat center center/cover;
+        }
+
+        /* GTA STYLE UI CONTAINER */
+        .gta-container {
+            background: var(--bg-overlay);
+            border: 4px solid white;
+            padding: 40px;
+            width: 90%;
+            max-width: 450px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 12px 12px 0px var(--gta-yellow);
+            text-transform: uppercase;
+            display: none; /* Hidden by default for logic */
+        }
+
+        .active { display: block; }
+
+        h1 {
+            font-size: 2.8rem;
+            line-height: 0.9;
+            margin-bottom: 30px;
+            font-style: italic;
+            -webkit-text-stroke: 1.5px var(--gta-yellow);
+            letter-spacing: -2px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #555;
+            color: white;
+            font-family: 'Space Grotesk', sans-serif;
+            box-sizing: border-box;
+        }
+
+        input:focus {
+            border-color: var(--gta-yellow);
+            outline: none;
+        }
+
+        .gta-btn {
+            width: 100%;
+            padding: 15px;
+            background: white;
+            color: black;
+            border: none;
+            font-weight: 900;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: 0.1s;
+            margin-top: 10px;
+        }
+
+        .gta-btn:hover {
+            background: var(--gta-yellow);
+            transform: scale(1.03) skew(-5deg);
+        }
+
+        #output-screen {
+            background: rgba(0,0,0,0.9);
+            border-left: 6px solid var(--gta-blue);
+            padding: 15px;
+            margin-top: 20px;
+            font-family: 'Space Grotesk', sans-serif;
+            min-height: 100px;
+            font-size: 0.9rem;
+            text-transform: none;
+        }
+
+        .loader {
+            color: var(--gta-yellow);
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-video-wrap"></div>
+
+    <div id="login-page" class="gta-container active">
+        <h1>IMAGE TO TEXT LIVE TRANSFORMER</h1>
+        <div class="input-group"><input type="text" placeholder="NAME" id="name"></div>
+        <div class="input-group"><input type="text" placeholder="USERNAME" id="user"></div>
+        <div class="input-group"><input type="email" placeholder="EMAIL" id="email"></div>
+        <div class="input-group"><input type="password" placeholder="PASSWORD"></div>
+        <button class="gta-btn" onclick="showPage('transform-page')">LOGIN</button>
+    </div>
+
+    <div id="transform-page" class="gta-container">
+        <h1>TRANSFORM_ DATA</h1>
+        <p style="font-size: 0.7rem; color: #aaa;">Upload image to extract text</p>
+        
+        <input type="file" id="imageInput" accept="image/*" style="padding: 10px 0;">
+        <button class="gta-btn" onclick="processImage()">START TRANSFORMATION</button>
+
+        <div id="loader" class="loader">PROCESSING... PLEASE WAIT...</div>
+        
+        <div id="output-screen">
+            <span id="resultText">AWAITING INPUT...</span>
+        </div>
+
+        <button class="gta-btn" style="background: transparent; color: white; border: 1px solid white; font-size: 0.8rem;" onclick="showPage('login-page')">GO BACK HOME</button>
+    </div>
+
+    <script>
+        // PAGE SWITCHING LOGIC
+        function showPage(pageId) {
+            document.querySelectorAll('.gta-container').forEach(div => div.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+        }
+
+        // IMAGE TO TEXT TRANSFORMATION LOGIC
+        async function processImage() {
+            const fileInput = document.getElementById('imageInput');
+            const resultText = document.getElementById('resultText');
+            const loader = document.getElementById('loader');
+
+            if (fileInput.files.length === 0) {
+                alert("SELECT AN IMAGE, HOMIE!");
+                return;
+            }
+
+            loader.style.display = "block";
+            resultText.innerText = "";
+
+            try {
+                const image = fileInput.files[0];
+                // Tesseract.js magic (Replacing Python backend)
+                const result = await Tesseract.recognize(image, 'eng');
+                
+                loader.style.display = "none";
+                resultText.innerText = result.data.text;
+            } catch (error) {
+                loader.style.display = "none";
+                resultText.innerText = "ERROR IN TRANSFORMATION.";
+                console.error(error);
+            }
+        }
+    </script>
+</body>
+</html>
