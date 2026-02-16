@@ -3,219 +3,193 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SPACE SCANNER | GTA EDITION</title>
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <title>SPACE TRANSITION | GTA V EDITION</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@900&family=Space+Grotesk:wght@700&display=swap');
 
-        :root {
-            --gta-yellow: #fde02a;
-            --gta-blue: #00aaff;
-            --neon-pink: #ff00ff;
-        }
-
-        body, html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            background: #000;
-            font-family: 'Outfit', sans-serif;
-            color: white;
-            overflow: hidden;
-        }
-
-        /* SPACE ANIME BACKGROUND */
-        .bg-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -2;
-            background: url('https://wallpaperaccess.com/full/419642.jpg') center/cover;
-            opacity: 0.6;
-        }
-
-        /* GTA STYLE UI */
+        body, html { margin: 0; padding: 0; overflow: hidden; background: #000; font-family: 'Outfit', sans-serif; }
+        
+        #canvas-container { position: fixed; top: 0; left: 0; z-index: -1; }
+        
         .gta-panel {
-            background: rgba(0, 0, 0, 0.9);
+            background: rgba(0, 0, 0, 0.8);
             border: 4px solid white;
-            padding: 30px;
-            width: 350px;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            box-shadow: 10px 10px 0px var(--gta-yellow);
+            box-shadow: 10px 10px 0px #fde02a;
             text-transform: uppercase;
-            z-index: 10;
-        }
-
-        .hidden { display: none !important; }
-
-        h1 {
-            font-size: 2.2rem;
-            font-style: italic;
-            -webkit-text-stroke: 1px var(--gta-yellow);
-            margin-bottom: 20px;
-            line-height: 0.9;
-        }
-
-        input {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 10px;
-            background: #111;
-            border: 2px solid #444;
-            color: white;
-            box-sizing: border-box;
         }
 
         .gta-btn {
-            width: 100%;
-            padding: 15px;
-            background: white;
-            color: black;
-            border: none;
-            font-weight: 900;
-            cursor: pointer;
-            transition: 0.1s;
+            transition: all 0.1s;
+            clip-path: polygon(5% 0%, 100% 0%, 95% 100%, 0% 100%);
+        }
+        
+        .gta-btn:hover { background: #fde02a; color: black; transform: scale(1.05); }
+
+        /* Animation for Comets */
+        @keyframes comet {
+            0% { transform: translateX(-100%) translateY(-100%); opacity: 1; }
+            100% { transform: translateX(200%) translateY(200%); opacity: 0; }
+        }
+        .comet {
+            position: absolute; width: 2px; height: 100px;
+            background: linear-gradient(to bottom, white, transparent);
+            animation: comet 3s linear infinite;
         }
 
-        .gta-btn:hover {
-            background: var(--gta-yellow);
-            transform: skew(-5deg);
-        }
-
-        /* LIVE CAMERA TRANSFORMER STYLES */
-        #camera-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 5;
-        }
-
-        video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            filter: grayscale(1) contrast(1.5) brightness(0.8); /* Anime Noir Style */
-        }
-
-        #data-overlay {
-            position: absolute;
-            top: 20%;
-            left: 10%;
-            right: 10%;
-            bottom: 20%;
-            border: 2px solid var(--gta-blue);
-            pointer-events: none;
-            box-shadow: 0 0 20px var(--gta-blue);
-        }
-
-        #live-text-output {
-            position: absolute;
-            bottom: 10%;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 170, 255, 0.3);
-            padding: 20px;
-            width: 80%;
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 1.5rem;
-            color: var(--gta-yellow);
-            text-shadow: 2px 2px black;
-            border-left: 8px solid white;
-        }
-
-        .nav-ui {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            z-index: 100;
+        .camera-overlay {
+            border: 2px solid #00f2ff;
+            box-shadow: inset 0 0 50px rgba(0, 242, 255, 0.2);
         }
     </style>
 </head>
 <body>
 
-    <div class="bg-overlay"></div>
+    <div id="canvas-container"></div>
+    <div id="comet-layer" class="fixed inset-0 pointer-events-none"></div>
 
-    <div id="login-page" class="gta-panel">
-        <h1>LOGIN_USER</h1>
-        <input type="text" placeholder="NAME">
-        <input type="text" placeholder="USERNAME">
-        <input type="email" placeholder="EMAIL">
-        <input type="password" placeholder="PASSWORD">
-        <button class="gta-btn" onclick="startCamera()">INITIATE SCANNER</button>
+    <div id="login-screen" class="fixed inset-0 flex items-center justify-center z-50">
+        <div class="gta-panel p-10 w-full max-w-md">
+            <h1 class="text-5xl font-black italic text-white mb-8 leading-none">
+                SPACE <span class="text-yellow-400">TRANSFORMER</span>
+            </h1>
+            <div class="space-y-4">
+                <input type="text" placeholder="NAME" class="w-full bg-zinc-900 border-2 border-zinc-700 p-4 text-white outline-none focus:border-cyan-400">
+                <input type="text" placeholder="USERNAME" class="w-full bg-zinc-900 border-2 border-zinc-700 p-4 text-white outline-none focus:border-cyan-400">
+                <input type="password" placeholder="PASSWORD" class="w-full bg-zinc-900 border-2 border-zinc-700 p-4 text-white outline-none focus:border-cyan-400">
+                <button onclick="launchApp()" class="w-full bg-white text-black font-black py-5 text-2xl gta-btn">LOGIN</button>
+            </div>
+        </div>
     </div>
 
-    <div id="scanner-page" class="hidden">
-        <div class="nav-ui">
-            <button class="gta-btn" style="width: auto; padding: 10px;" onclick="location.reload()">BACK TO HOME</button>
+    <div id="main-ui" class="hidden fixed inset-0 flex flex-col z-10">
+        <div class="p-6 flex justify-between">
+            <div class="gta-panel px-6 py-2">
+                <div class="text-cyan-400 text-xs tracking-widest">SATELLITE_LINK: ACTIVE</div>
+                <div id="clock" class="text-3xl font-bold text-white">12:00</div>
+            </div>
+            <button onclick="toggleCamera()" class="gta-panel px-6 py-2 bg-white text-black font-black hover:bg-yellow-400">
+                SWITCH_CAM
+            </button>
+        </div>
+
+        <div class="relative flex-grow mx-6 camera-overlay overflow-hidden rounded-lg">
+            <video id="video" autoplay playsinline class="w-full h-full object-cover"></video>
+            
+            <div class="absolute bottom-5 right-5 flex gap-4 opacity-70">
+                <span class="text-4xl">🚲</span>
+                <span class="text-4xl animate-bounce">🚗</span>
+            </div>
+        </div>
+
+        <div class="p-8">
+            <div class="gta-panel p-6 bg-black flex flex-col border-l-8 border-l-cyan-500">
+                <span class="text-cyan-500 text-sm font-bold tracking-tighter">AI_OBJECT_RECOGNITION_SYSTEM</span>
+                <div id="detection-box" class="text-4xl font-black text-white italic mt-2">
+                    INITIALIZING SENSORS...
+                </div>
+            </div>
         </div>
         
-        <div id="camera-container">
-            <video id="video" autoplay playsinline></video>
-            <div id="data-overlay"></div>
-            <div id="live-text-output">SCANNING OBJECTS...</div>
-        </div>
-        
-        <canvas id="canvas" class="hidden"></canvas>
+        <button onclick="location.reload()" class="p-4 text-white text-xs opacity-50 underline uppercase">Go Back Home</button>
     </div>
 
     <script>
-        const video = document.getElementById('video');
-        const canvas = document.getElementById('canvas');
-        const output = document.getElementById('live-text-output');
-        const loginPage = document.getElementById('login-page');
-        const scannerPage = document.getElementById('scanner-page');
+        let currentFacingMode = "environment";
+        let videoStream = null;
+        let model = null;
 
-        // 1. START CAMERA
+        // 1. THREE.JS SPACE BACKGROUND
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        const starsGeometry = new THREE.BufferGeometry();
+        const starsCount = 8000;
+        const positions = new Float32Array(starsCount * 3);
+        for(let i=0; i<starsCount*3; i++) positions[i] = (Math.random() - 0.5) * 100;
+        starsGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        const starsMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.05 });
+        const starField = new THREE.Points(starsGeometry, starsMaterial);
+        scene.add(starField);
+        camera.position.z = 2;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            starField.rotation.y += 0.0005;
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // Gyroscope Control
+        window.addEventListener('deviceorientation', (event) => {
+            starField.rotation.x = event.beta * 0.002;
+            starField.rotation.y = event.gamma * 0.002;
+        });
+
+        // 2. LIVE CAMERA LOGIC
+        async function launchApp() {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('main-ui').classList.remove('hidden');
+            
+            // Load AI Model
+            document.getElementById('detection-box').innerText = "LOADING AI...";
+            model = await cocoSsd.load();
+            startCamera();
+        }
+
         async function startCamera() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: "environment" } 
-                });
-                video.srcObject = stream;
-                loginPage.classList.add('hidden');
-                scannerPage.classList.remove('hidden');
-                
-                // Start the OCR Loop
-                setInterval(captureAndProcess, 2000); // Scans every 2 seconds
-            } catch (err) {
-                alert("Camera access denied or not found!");
-            }
+            if (videoStream) videoStream.getTracks().forEach(t => t.stop());
+            
+            const constraints = { video: { facingMode: currentFacingMode } };
+            videoStream = await navigator.mediaDevices.getUserMedia(constraints);
+            const video = document.getElementById('video');
+            video.srcObject = videoStream;
+            
+            // Start Detection Loop
+            detectObjects();
         }
 
-        // 2. CAPTURE FRAME & TRANSFORM TO TEXT
-        async function captureAndProcess() {
-            const context = canvas.getContext('2d');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            
-            // Draw current video frame to hidden canvas
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
-            
-            // Tesseract Magic
-            output.innerText = "TRANSFORMING...";
-            
-            try {
-                const result = await Tesseract.recognize(canvas, 'eng');
-                if(result.data.text.trim().length > 0) {
-                    output.innerText = result.data.text;
-                } else {
-                    output.innerText = "NO DATA DETECTED";
-                }
-            } catch (e) {
-                console.error("OCR Error:", e);
-            }
+        function toggleCamera() {
+            currentFacingMode = (currentFacingMode === "user") ? "environment" : "user";
+            startCamera();
         }
+
+        async function detectObjects() {
+            const video = document.getElementById('video');
+            if (model && video.readyState === 4) {
+                const predictions = await model.detect(video);
+                if (predictions.length > 0) {
+                    // Update the "What thing it is see" box
+                    document.getElementById('detection-box').innerText = predictions[0].class.toUpperCase();
+                } else {
+                    document.getElementById('detection-box').innerText = "SCANNING STREETS...";
+                }
+            }
+            requestAnimationFrame(detectObjects);
+        }
+
+        // GTA Clock
+        setInterval(() => {
+            const d = new Date();
+            document.getElementById('clock').innerText = d.getHours() + ":" + d.getMinutes().toString().padStart(2, '0');
+        }, 1000);
+
+        // Add random comets
+        setInterval(() => {
+            const comet = document.createElement('div');
+            comet.className = 'comet';
+            comet.style.left = Math.random() * 100 + '%';
+            comet.style.top = Math.random() * 100 + '%';
+            document.getElementById('comet-layer').appendChild(comet);
+            setTimeout(() => comet.remove(), 3000);
+        }, 2000);
     </script>
 </body>
 </html>
