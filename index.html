@@ -3,83 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SPACE TRANSFORMER | GTA EDITION</title>
+    <title>SPACE SCANNER | GTA EDITION</title>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@900&family=Space+Grotesk:wght@300;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@900&family=Space+Grotesk:wght@700&display=swap');
 
         :root {
             --gta-yellow: #fde02a;
             --gta-blue: #00aaff;
             --neon-pink: #ff00ff;
-            --bg-overlay: rgba(0, 0, 0, 0.7);
         }
 
         body, html {
             margin: 0;
             padding: 0;
             height: 100%;
+            background: #000;
             font-family: 'Outfit', sans-serif;
-            background: #050505;
             color: white;
-            overflow-x: hidden;
+            overflow: hidden;
         }
 
         /* SPACE ANIME BACKGROUND */
-        .bg-video-wrap {
+        .bg-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: -1;
-            background: url('https://wallpaperaccess.com/full/419642.jpg') no-repeat center center/cover;
+            z-index: -2;
+            background: url('https://wallpaperaccess.com/full/419642.jpg') center/cover;
+            opacity: 0.6;
         }
 
-        /* GTA STYLE UI CONTAINER */
-        .gta-container {
-            background: var(--bg-overlay);
+        /* GTA STYLE UI */
+        .gta-panel {
+            background: rgba(0, 0, 0, 0.9);
             border: 4px solid white;
-            padding: 40px;
-            width: 90%;
-            max-width: 450px;
+            padding: 30px;
+            width: 350px;
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            box-shadow: 12px 12px 0px var(--gta-yellow);
+            box-shadow: 10px 10px 0px var(--gta-yellow);
             text-transform: uppercase;
-            display: none; /* Hidden by default for logic */
+            z-index: 10;
         }
 
-        .active { display: block; }
+        .hidden { display: none !important; }
 
         h1 {
-            font-size: 2.8rem;
-            line-height: 0.9;
-            margin-bottom: 30px;
+            font-size: 2.2rem;
             font-style: italic;
-            -webkit-text-stroke: 1.5px var(--gta-yellow);
-            letter-spacing: -2px;
-        }
-
-        .input-group {
-            margin-bottom: 15px;
+            -webkit-text-stroke: 1px var(--gta-yellow);
+            margin-bottom: 20px;
+            line-height: 0.9;
         }
 
         input {
             width: 100%;
             padding: 12px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 2px solid #555;
+            margin-bottom: 10px;
+            background: #111;
+            border: 2px solid #444;
             color: white;
-            font-family: 'Space Grotesk', sans-serif;
             box-sizing: border-box;
-        }
-
-        input:focus {
-            border-color: var(--gta-yellow);
-            outline: none;
         }
 
         .gta-btn {
@@ -89,97 +78,142 @@
             color: black;
             border: none;
             font-weight: 900;
-            font-size: 1.2rem;
             cursor: pointer;
             transition: 0.1s;
-            margin-top: 10px;
         }
 
         .gta-btn:hover {
             background: var(--gta-yellow);
-            transform: scale(1.03) skew(-5deg);
+            transform: skew(-5deg);
         }
 
-        #output-screen {
-            background: rgba(0,0,0,0.9);
-            border-left: 6px solid var(--gta-blue);
-            padding: 15px;
-            margin-top: 20px;
+        /* LIVE CAMERA TRANSFORMER STYLES */
+        #camera-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 5;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: grayscale(1) contrast(1.5) brightness(0.8); /* Anime Noir Style */
+        }
+
+        #data-overlay {
+            position: absolute;
+            top: 20%;
+            left: 10%;
+            right: 10%;
+            bottom: 20%;
+            border: 2px solid var(--gta-blue);
+            pointer-events: none;
+            box-shadow: 0 0 20px var(--gta-blue);
+        }
+
+        #live-text-output {
+            position: absolute;
+            bottom: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 170, 255, 0.3);
+            padding: 20px;
+            width: 80%;
             font-family: 'Space Grotesk', sans-serif;
-            min-height: 100px;
-            font-size: 0.9rem;
-            text-transform: none;
+            font-size: 1.5rem;
+            color: var(--gta-yellow);
+            text-shadow: 2px 2px black;
+            border-left: 8px solid white;
         }
 
-        .loader {
-            color: var(--gta-yellow);
-            font-size: 0.8rem;
-            letter-spacing: 2px;
-            display: none;
+        .nav-ui {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
         }
     </style>
 </head>
 <body>
 
-    <div class="bg-video-wrap"></div>
+    <div class="bg-overlay"></div>
 
-    <div id="login-page" class="gta-container active">
-        <h1>IMAGE TO TEXT LIVE TRANSFORMER</h1>
-        <div class="input-group"><input type="text" placeholder="NAME" id="name"></div>
-        <div class="input-group"><input type="text" placeholder="USERNAME" id="user"></div>
-        <div class="input-group"><input type="email" placeholder="EMAIL" id="email"></div>
-        <div class="input-group"><input type="password" placeholder="PASSWORD"></div>
-        <button class="gta-btn" onclick="showPage('transform-page')">LOGIN</button>
+    <div id="login-page" class="gta-panel">
+        <h1>LOGIN_USER</h1>
+        <input type="text" placeholder="NAME">
+        <input type="text" placeholder="USERNAME">
+        <input type="email" placeholder="EMAIL">
+        <input type="password" placeholder="PASSWORD">
+        <button class="gta-btn" onclick="startCamera()">INITIATE SCANNER</button>
     </div>
 
-    <div id="transform-page" class="gta-container">
-        <h1>TRANSFORM_ DATA</h1>
-        <p style="font-size: 0.7rem; color: #aaa;">Upload image to extract text</p>
-        
-        <input type="file" id="imageInput" accept="image/*" style="padding: 10px 0;">
-        <button class="gta-btn" onclick="processImage()">START TRANSFORMATION</button>
-
-        <div id="loader" class="loader">PROCESSING... PLEASE WAIT...</div>
-        
-        <div id="output-screen">
-            <span id="resultText">AWAITING INPUT...</span>
+    <div id="scanner-page" class="hidden">
+        <div class="nav-ui">
+            <button class="gta-btn" style="width: auto; padding: 10px;" onclick="location.reload()">BACK TO HOME</button>
         </div>
-
-        <button class="gta-btn" style="background: transparent; color: white; border: 1px solid white; font-size: 0.8rem;" onclick="showPage('login-page')">GO BACK HOME</button>
+        
+        <div id="camera-container">
+            <video id="video" autoplay playsinline></video>
+            <div id="data-overlay"></div>
+            <div id="live-text-output">SCANNING OBJECTS...</div>
+        </div>
+        
+        <canvas id="canvas" class="hidden"></canvas>
     </div>
 
     <script>
-        // PAGE SWITCHING LOGIC
-        function showPage(pageId) {
-            document.querySelectorAll('.gta-container').forEach(div => div.classList.remove('active'));
-            document.getElementById(pageId).classList.add('active');
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const output = document.getElementById('live-text-output');
+        const loginPage = document.getElementById('login-page');
+        const scannerPage = document.getElementById('scanner-page');
+
+        // 1. START CAMERA
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: "environment" } 
+                });
+                video.srcObject = stream;
+                loginPage.classList.add('hidden');
+                scannerPage.classList.remove('hidden');
+                
+                // Start the OCR Loop
+                setInterval(captureAndProcess, 2000); // Scans every 2 seconds
+            } catch (err) {
+                alert("Camera access denied or not found!");
+            }
         }
 
-        // IMAGE TO TEXT TRANSFORMATION LOGIC
-        async function processImage() {
-            const fileInput = document.getElementById('imageInput');
-            const resultText = document.getElementById('resultText');
-            const loader = document.getElementById('loader');
-
-            if (fileInput.files.length === 0) {
-                alert("SELECT AN IMAGE, HOMIE!");
-                return;
-            }
-
-            loader.style.display = "block";
-            resultText.innerText = "";
-
+        // 2. CAPTURE FRAME & TRANSFORM TO TEXT
+        async function captureAndProcess() {
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
+            // Draw current video frame to hidden canvas
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // Tesseract Magic
+            output.innerText = "TRANSFORMING...";
+            
             try {
-                const image = fileInput.files[0];
-                // Tesseract.js magic (Replacing Python backend)
-                const result = await Tesseract.recognize(image, 'eng');
-                
-                loader.style.display = "none";
-                resultText.innerText = result.data.text;
-            } catch (error) {
-                loader.style.display = "none";
-                resultText.innerText = "ERROR IN TRANSFORMATION.";
-                console.error(error);
+                const result = await Tesseract.recognize(canvas, 'eng');
+                if(result.data.text.trim().length > 0) {
+                    output.innerText = result.data.text;
+                } else {
+                    output.innerText = "NO DATA DETECTED";
+                }
+            } catch (e) {
+                console.error("OCR Error:", e);
             }
         }
     </script>
